@@ -1,0 +1,123 @@
+//==============================================================================
+//===| TAMANDUTECH EQUIPE DE ROB�TICA  |========================================
+//===|          EST�GIO 2024           |========================================
+//===|       C�DIGO DE EXEMPLO         |========================================
+//==============================================================================
+
+/* Este c�digo funciona de maneira que o rob� possa se movimentar atrav�s dos motores A e C
+Gire no pr�prio eixo para a esquerda com 50% da pot�ncia at� que identifique um advers�rio a menos de 35cm.
+Uma vez identificado, o rob� andar� para frente em velocidade m�xima at� que a luta acabe ou ele perca o advers�rio de vista.
+
+O intuito do desafio � adaptar o c�digo ao rob� de voc�s, adicionar movimenta��o inicial na fun��o pr� definida e realizar ajustes
+na velocidade dos motores conforme forem necess�rios
+
+Os comandos b�sicos s�o:
+
+OnFwd(MOTOR, POTENCIA (0 a 100));
+delay(milisegundos);
+
+La�os s�o os comuns de C, while, for, do while, until.
+
+Condicionais if, else if, else, switch case.
+
+Para outras fun��es, tasks, structures ou condicionamentos especiais, procurar ajuda na staff do est�gio */
+
+//==============================================================================
+//==============================================================================
+//==============================================================================
+
+/* Ordem de montagem:
+
+Motor da Direita na porta A
+Motor da Arma ou desarme na porta B
+Motor da Esquerda na porta C
+Sensor na porta 1
+Qualquer outra condi��o ou ideia, buscar apoio dos membros da equipe para configura��o
+*/
+
+//==============================================================================
+//==============================================================================
+//==============================================================================
+
+//__________N�O MEXER SEM APOIO DA STAFF_______________________________________
+#define motorDireita OUT_A      // Motor Direito --> entrada A
+#define motorArma OUT_B         // Poss�vel motor de Arma --> entrada B
+#define motorEsquerda OUT_C     // Motor Esquerdo --> entrada C
+#define distancia_sensorE SensorUS(IN_1)// Sensor Ultrass�nico --> entrada 1
+#define distancia_sensorD SensorUS(IN_2)// Sensor Ultrass�nico --> entrada 2
+task manterArmaParada();
+
+
+
+
+//__________MEXER PARA REGULAR A DISTANCIA DE BUSCA E ATAQUE____________________
+#define distancia_busca 35      // Limiar para o rob� come�ar a andar para frente, em cent�metros
+#define distancia_ataque 5
+
+//__________MEXER PARA REGULAR O SENTIDO DOS MOTORES____________________________
+#define sr 1                    // sr: Sentido das rodas - se o sentido das rodas estiverem invertidos mudar para -1
+#define sa 1                    // sa: Sentido da arma - se o sentido da arma estiver invertido mudar para -1
+
+//__________VARI�VEIS DE CONTROLE_______________________________________________
+int armaEstaAtiva = false;
+int ultimaPosicao = 1;
+
+//==============================================================================
+//=========================CORPO DO C�DIGO======================================
+//==============================================================================
+
+task main(){
+
+    SetSensorLowspeed(IN_1);            // N�O MEXER SUJEITO � >>>PROBLEMAS<<<
+    SetSensorLowspeed(IN_2);
+    Wait(5000);                         // Tempo de espera previsto nas regras
+
+    StartTask(manterArmaParada);
+    Wait(1000); // Espera a arma abaixar
+
+
+    while(true) {
+
+      if((distancia_sensorD <= distancia_busca) && (distancia_sensorE <= distancia_busca)) { // Verifica se o oponente est� na frente
+         OnFwd(motorEsquerda, 100*sr); // Avan�a com velocidade m�xima para frente ao localizar o oponente
+         OnFwd(motorDireita, 100*sr);
+      } else if (distancia_sensorD <= distancia_busca) {
+         OnFwd(motorEsquerda, 75*sr); // Se achar o oponente no sensor direito, faz uma curva no sentido hor�rio
+         OnFwd(motorDireita, 10*sr);
+         ultimaPosicao = 1;
+      } else if (distancia_sensorE <= distancia_busca) {
+         OnFwd(motorEsquerda, 10*sr); // Se achar o oponente no sensor esquerdo, faz uma curva no sentido anti hor�rio
+         OnFwd(motorDireita, 75*sr);
+         ultimaPosicao = -1;
+      } else {
+         OnFwd(motorEsquerda, 75*sr*ultimaPosicao); // Se n�o achar o oponente, gira sentido da �ltima detec��o
+         OnFwd(motorDireita, -75*sr*ultimaPosicao);
+      }
+
+      Wait(20);
+    }
+}
+
+task manterArmaParada() {
+     ResetRotationCount(motorArma);
+
+    int alvo = -30; // Ver qual altura ideal da arma
+    int margemDeErro = 5;
+
+    RotateMotor(motorArma, 20*sa, alvo); // Desce a arma inciialmente
+
+    while(true) {
+        int posicao = MotorRotationCount(motorArma);
+
+
+        if (posicao < (alvo - margemDeErro)) {  // Compara a posi��o da arma com o alvo e faz  ajuste
+            OnFwd(motorArma, 20*sa);
+        } else if (posicao > (alvo + margemDeErro)) {
+            OnFwd(motorArma, -20*sa);
+        } else {
+          Off(motorArma);
+        }
+
+        Wait(20);
+    }
+}
