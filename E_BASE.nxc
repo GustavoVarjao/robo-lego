@@ -61,6 +61,7 @@ task arma();
 
 //__________VARIÁVEIS DE CONTROLE_______________________________________________
 int armaEstaAtiva = false;
+int ultimaPosicao = 1;
 
 //==============================================================================
 //=========================CORPO DO CÓDIGO======================================
@@ -72,35 +73,37 @@ task main(){
     SetSensorLowspeed(IN_2);
     Wait(5000);                         // Tempo de espera previsto nas regras
 
-    abaixarArma();                      // Apagar o "//" caso seu robô tenha motor para arma/desarme
+    abaixarArma();
     //movimentacaoInicial();            // Apagar o "//" para que seu robô execute a estratégia inicial
     
 
 
 
     while(true) {
-      if (armaEstaAtiva) { //Enquanto a arma está ativa, ela a pode entrar na frente dos sensores
+      if (armaEstaAtiva) { // Enquanto a arma está ativa, ela a pode entrar na frente dos sensores
          continue;
       } else {
-         OnFwd(motorArma, 5*sa); //Força a arma no chão
+         OnFwd(motorArma, 5*sa); // Força a arma no chão
       }
 
-      if((distancia_sensorD <= distancia_busca) && (distancia_sensorE <= distancia_busca)) { //Verifica se o oponente está na frente
-         if((distancia_sensorD <= distancia_ataque) && (distancia_sensorE <= distancia_ataque)) { //Verifica se o oponente está próximo o sufuciente e a arma não está ativa
+      if((distancia_sensorD <= distancia_busca) && (distancia_sensorE <= distancia_busca)) { // Verifica se o oponente está na frente
+         if((distancia_sensorD <= distancia_ataque) && (distancia_sensorE <= distancia_ataque)) { // Verifica se o oponente está próximo o sufuciente
             StartTask(arma);
          }
 
          OnFwd(motorEsquerda, 100*sr); // Avança com velocidade máxima para frente ao localizar o oponente
          OnFwd(motorDireita, 100*sr);
       } else if (distancia_sensorD <= distancia_busca) {
-         OnFwd(motorEsquerda, 75*sr); // Se achar o oponente no sensor direito, gira sentido horário
-         OnFwd(motorDireita, -75*sr);
+         OnFwd(motorEsquerda, 75*sr); // Se achar o oponente no sensor direito, faz uma curva no sentido horário
+         OnFwd(motorDireita, 10*sr);
+         ultimaPosicao = 1;
       } else if (distancia_sensorE <= distancia_busca) {
-         OnFwd(motorEsquerda, -75*sr); // Se achar o oponente no sensor esquerdo, gira sentido anti horário
+         OnFwd(motorEsquerda, 10*sr); // Se achar o oponente no sensor esquerdo, faz uma curva no sentido anti horário
          OnFwd(motorDireita, 75*sr);
+         ultimaPosicao = -1;
       } else {
-         OnFwd(motorEsquerda, 75*sr); // Se não achar o oponente, gira sentido horário
-         OnFwd(motorDireita, -75*sr);
+         OnFwd(motorEsquerda, 75*sr*ultimaPosicao); // Se não achar o oponente, gira sentido da última detecção
+         OnFwd(motorDireita, -75*sr*ultimaPosicao);
       }
 
       Wait(20);
