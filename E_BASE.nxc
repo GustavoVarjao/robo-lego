@@ -74,6 +74,7 @@ task main(){
     Wait(5000);                         // Tempo de espera previsto nas regras
 
     abaixarArma();
+    Wait(1000); // Espera a arma abaixar
     //movimentacaoInicial();            // Apagar o "//" para que seu robô execute a estratégia inicial
     
 
